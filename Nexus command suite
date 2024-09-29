@@ -1,0 +1,204 @@
+-- Load Orion Library
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
+local Window = OrionLib:MakeWindow({
+    Name = "Nexus Command Suite",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "KadeHubConfigs",
+    IntroText = "Welcome to chottabheem's hub!"
+})
+
+-- Create Watermark
+local function createWatermark()
+    local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+    local watermark = Instance.new("TextLabel")
+    watermark.Size = UDim2.new(1, 0, 0, 30)
+    watermark.Position = UDim2.new(0, 0, 0, 0)
+    watermark.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    watermark.BackgroundTransparency = 0.5
+    watermark.TextColor3 = Color3.fromRGB(255, 0, 0) -- Red color for the watermark
+    watermark.TextStrokeTransparency = 0.5
+    watermark.Text = "Nexus Command Suite Reworked Version 1"
+    watermark.TextSize = 18
+    watermark.TextXAlignment = Enum.TextXAlignment.Center
+    watermark.Parent = playerGui
+end
+
+-- Create Watermark
+createWatermark()
+
+-- Shenanigans (Not FE) Tab
+local ShenanigansTab = Window:MakeTab({
+    Name = "Shenanigans (Not FE)",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+-- Fake Headless Button
+ShenanigansTab:AddButton({
+    Name = "Fake Headless",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        if character and character:FindFirstChild("Head") then
+            local head = character.Head
+            head.Transparency = 1
+            head.CanCollide = false
+            if head:FindFirstChildOfClass("Decal") then
+                head:FindFirstChildOfClass("Decal"):Destroy() -- Remove any decals if present
+            end
+        end
+    end    
+})
+
+-- Universal Tab
+local UniversalTab = Window:MakeTab({
+    Name = "Universal",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+-- Fly Button
+UniversalTab:AddButton({
+    Name = "Fly",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+        local flying = false
+        local flySpeed = 50
+
+        -- Fly GUI Setup
+        local flyGui = Instance.new("ScreenGui")
+        flyGui.Parent = player:WaitForChild("PlayerGui")
+
+        local flyFrame = Instance.new("Frame")
+        flyFrame.Size = UDim2.new(0, 200, 0, 60)
+        flyFrame.Position = UDim2.new(0, 20, 0.5, -30)
+        flyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        flyFrame.BackgroundTransparency = 0.5
+        flyFrame.BorderSizePixel = 0
+        flyFrame.Parent = flyGui
+
+        local flyButton = Instance.new("TextButton")
+        flyButton.Size = UDim2.new(0, 160, 0, 40)
+        flyButton.Position = UDim2.new(0, 20, 0, 10)
+        flyButton.Text = "Fly"
+        flyButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        flyButton.Parent = flyFrame
+
+        local increaseSpeedButton = Instance.new("TextButton")
+        increaseSpeedButton.Size = UDim2.new(0, 40, 0, 40)
+        increaseSpeedButton.Position = UDim2.new(0, 0, 0, 10)
+        increaseSpeedButton.Text = "➕"
+        increaseSpeedButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        increaseSpeedButton.Parent = flyFrame
+
+        local decreaseSpeedButton = Instance.new("TextButton")
+        decreaseSpeedButton.Size = UDim2.new(0, 40, 0, 40)
+        decreaseSpeedButton.Position = UDim2.new(1, -40, 0, 10)
+        decreaseSpeedButton.Text = "➖"
+        decreaseSpeedButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        decreaseSpeedButton.Parent = flyFrame
+
+        local function toggleFly()
+            flying = not flying
+            if flying then
+                local bodyVelocity = Instance.new("BodyVelocity")
+                bodyVelocity.Name = "FlyVelocity"
+                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+                bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                bodyVelocity.Parent = humanoidRootPart
+
+                local bodyGyro = Instance.new("BodyGyro")
+                bodyGyro.Name = "FlyGyro"
+                bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+                bodyGyro.CFrame = humanoidRootPart.CFrame
+                bodyGyro.Parent = humanoidRootPart
+
+                while flying do
+                    wait()
+                    bodyVelocity.Velocity = (humanoidRootPart.Position - workspace.CurrentCamera.CFrame.p).unit * flySpeed
+                    bodyGyro.CFrame = workspace.CurrentCamera.CFrame
+                end
+
+                bodyVelocity:Destroy()
+                bodyGyro:Destroy()
+            end
+        end
+
+        flyButton.MouseButton1Click:Connect(toggleFly)
+
+        increaseSpeedButton.MouseButton1Click:Connect(function()
+            flySpeed = flySpeed + 10
+            print("Fly Speed Increased:", flySpeed)
+        end)
+
+        decreaseSpeedButton.MouseButton1Click:Connect(function()
+            flySpeed = math.max(10, flySpeed - 10)
+            print("Fly Speed Decreased:", flySpeed)
+        end)
+
+        -- Make the Fly GUI moveable
+        local dragging = false
+        local dragInput, dragStart, startPos
+
+        local function update(input)
+            local delta = input.Position - dragStart
+            flyFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+
+        flyFrame.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                dragStart = input.Position
+                startPos = flyFrame.Position
+
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
+
+        flyFrame.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                dragInput = input
+            end
+        end)
+
+        flyFrame.InputChanged:Connect(function(input)
+            if input == dragInput and dragging then
+                update(input)
+            end
+        end)
+    end    
+})
+
+-- Tsb Scripts Tab
+local TsbTab = Window:MakeTab({
+    Name = "Tsb Scripts",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+-- Kade Hub Button
+TsbTab:AddButton({
+    Name = "Kade Hub",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/skibiditoiletfan2007/KadeHubRepository/main/Latest.lua"))()
+    end    
+})
+
+-- Anti Lag Button
+TsbTab:AddButton({
+    Name = "Anti Lag",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/louismich4el/ItsLouisPlayz-Scripts/main/TSB%20Anti%20Lag.lua"))()
+    end    
+})
+
+-- Initialize the UI
+OrionLib:Init()
